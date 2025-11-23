@@ -23,7 +23,7 @@ export class ImportsController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadCSV(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+  async uploadCSV(@UploadedFile() file: Express.Multer.File, @Req() _req: any) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }

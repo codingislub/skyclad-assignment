@@ -9,7 +9,6 @@ import {
   UseGuards,
   Req,
   Query,
-  ForbiddenException,
 } from '@nestjs/common';
 import { CasesService } from './cases.service';
 import { CreateCaseDto } from './dto/create-case.dto';
