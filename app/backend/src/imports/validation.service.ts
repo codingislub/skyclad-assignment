@@ -5,7 +5,7 @@ import { CreateCaseDto } from '../cases/dto/create-case.dto';
 
 @Injectable()
 export class ValidationService {
-  async validateRow(record: any, rowNumber: number) {
+  async validateRow(record: any, _rowNumber: number) {
     const errors = [];
 
     // Transform and normalize data

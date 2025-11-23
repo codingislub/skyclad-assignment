@@ -8,8 +8,8 @@ import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let usersService: UsersService;
-  let jwtService: JwtService;
+  let _usersService: UsersService;
+  let _jwtService: JwtService;
 
   const mockUsersService = {
     findByEmail: jest.fn(),
@@ -45,8 +45,8 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get<UsersService>(UsersService);
-    jwtService = module.get<JwtService>(JwtService);
+    _usersService = module.get<UsersService>(UsersService);
+    _jwtService = module.get<JwtService>(JwtService);
   });
 
   afterEach(() => {

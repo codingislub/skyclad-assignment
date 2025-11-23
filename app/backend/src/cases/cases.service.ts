@@ -202,7 +202,7 @@ export class CasesService {
     return caseData;
   }
 
-  async update(id: string, updateCaseDto: UpdateCaseDto, userId: string) {
+  async update(id: string, updateCaseDto: UpdateCaseDto, _userId: string) {
     const existingCase = await this.findOne(id);
 
     const updatedCase = await this.prisma.case.update({
