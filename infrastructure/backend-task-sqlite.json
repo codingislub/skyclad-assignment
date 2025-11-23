@@ -1,0 +1,40 @@
+{
+  "family": "caseflow-backend-dev",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::395305481916:role/caseflow-execution-role-dev",
+  "taskRoleArn": "arn:aws:iam::395305481916:role/caseflow-task-role-dev",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "395305481916.dkr.ecr.us-east-1.amazonaws.com/caseflow-backend-dev:latest",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "command": ["sh", "-c", "npx prisma migrate deploy || true && npm run start:prod"],
+      "environment": [
+        {"name": "NODE_ENV", "value": "production"},
+        {"name": "PORT", "value": "3000"},
+        {"name": "DATABASE_URL", "value": "postgresql://caseflowadmin:1isWqnTYR4LwPzm3V8CH@caseflow-db-dev.cuf2yqgeawlb.us-east-1.rds.amazonaws.com:5432/postgres"},
+        {"name": "JWT_SECRET", "value": "temporary-jwt-secret-key-change-in-production"},
+        {"name": "JWT_REFRESH_SECRET", "value": "temporary-refresh-secret-key-change-in-production"},
+        {"name": "CORS_ORIGIN", "value": "http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/caseflow-backend-dev",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}

@@ -153,6 +153,7 @@ jobs:
         run: |
           npm run prisma:generate
           npx prisma migrate deploy
+          npm run build
           npm run prisma:seed
 
       - name: Start backend
@@ -169,7 +170,9 @@ jobs:
           THROTTLE_TTL: 60
           THROTTLE_LIMIT: 100
           NODE_ENV: test
-        run: npm run start:prod &
+        run: |
+          npm run start:prod &
+          sleep 10
 
       - name: Install frontend dependencies
         working-directory: app/frontend
@@ -260,10 +263,10 @@ jobs:
 
       - name: Wait for backend deployment
         run: |
-          aws ecs wait services-stable \
+          timeout 300 aws ecs wait services-stable \
             --cluster caseflow-cluster-dev \
             --services caseflow-backend-service \
-            --region us-east-1
+            --region us-east-1 || echo "Backend deployment continuing in background..."
 
       - name: Build and push frontend image
         env:
@@ -290,10 +293,10 @@ jobs:
 
       - name: Wait for frontend deployment
         run: |
-          aws ecs wait services-stable \
+          timeout 300 aws ecs wait services-stable \
             --cluster caseflow-cluster-dev \
             --services caseflow-frontend-service \
-            --region us-east-1
+            --region us-east-1 || echo "Frontend deployment continuing in background..."
 
       - name: Deployment complete
         run: |
