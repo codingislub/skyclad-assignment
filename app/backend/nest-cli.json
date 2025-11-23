@@ -1,0 +1,10 @@
+{
+  "type": "library",
+  "root": "src/",
+  "entryFile": "main",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true
+  }
+}

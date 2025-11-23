@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+}
+
+enum CaseCategory {
+  TAX
+  LICENSE
+  PERMIT
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum CaseStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum ImportStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String?
+  role          UserRole @default(OPERATOR)
+  firstName     String?
+  lastName      String?
+  refreshToken  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  cases         Case[]
+  imports       Import[]
+  auditLogs     AuditLog[]
+  
+  @@map("users")
+}
+
+model Case {
+  id              String        @id @default(cuid())
+  caseId          String        @unique
+  applicantName   String
+  dob             DateTime
+  email           String?
+  phone           String?
+  category        CaseCategory
+  priority        CasePriority  @default(LOW)
+  status          CaseStatus    @default(PENDING)
+  notes           String?
+  metadata        Json?
+  
+  createdById     String
+  createdBy       User          @relation(fields: [createdById], references: [id])
+  
+  importId        String?
+  import          Import?       @relation(fields: [importId], references: [id])
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  history         CaseHistory[]
+  
+  @@index([caseId])
+  @@index([status])
+  @@index([category])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([createdById])
+  @@map("cases")
+}
+
+model Import {
+  id              String        @id @default(cuid())
+  filename        String
+  totalRows       Int
+  successCount    Int           @default(0)
+  failureCount    Int           @default(0)
+  status          ImportStatus  @default(PROCESSING)
+  errorDetails    Json?
+  
+  createdById     String
+  createdBy       User          @relation(fields: [createdById], references: [id])
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  cases           Case[]
+  
+  @@index([createdById])
+  @@index([status])
+  @@index([createdAt])
+  @@map("imports")
+}
+
+model CaseHistory {
+  id          String   @id @default(cuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  
+  action      String
+  field       String?
+  oldValue    String?
+  newValue    String?
+  metadata    Json?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([caseId])
+  @@index([createdAt])
+  @@map("case_history")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  action      String
+  resource    String
+  resourceId  String?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

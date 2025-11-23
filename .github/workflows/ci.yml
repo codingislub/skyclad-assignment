@@ -1,0 +1,302 @@
+
+
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: caseflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: app/backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app/backend
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: app/backend
+        run: npm run prisma:generate
+
+      - name: Run migrations
+        working-directory: app/backend
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/caseflow_test
+        run: npx prisma migrate deploy
+
+      - name: Lint
+        working-directory: app/backend
+        run: npm run lint
+
+      - name: Type check
+        working-directory: app/backend
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        working-directory: app/backend
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/caseflow_test
+          JWT_SECRET: test_secret
+          JWT_REFRESH_SECRET: test_refresh_secret
+        run: npm run test:cov
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./app/backend/coverage/lcov.info
+          flags: backend
+
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: app/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app/frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: app/frontend
+        run: npm run lint
+
+      - name: Type check
+        working-directory: app/frontend
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        working-directory: app/frontend
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./app/frontend/coverage/lcov.info
+          flags: frontend
+
+  frontend-e2e:
+    name: Frontend E2E Tests
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: caseflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install backend dependencies
+        working-directory: app/backend
+        run: npm ci
+
+      - name: Setup backend
+        working-directory: app/backend
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/caseflow_test
+        run: |
+          npm run prisma:generate
+          npx prisma migrate deploy
+          npm run prisma:seed
+
+      - name: Start backend
+        working-directory: app/backend
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/caseflow_test
+          JWT_SECRET: test_secret
+          JWT_REFRESH_SECRET: test_refresh_secret
+          JWT_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 7d
+          PORT: 3001
+          CORS_ORIGIN: http://localhost:5173
+          FRONTEND_URL: http://localhost:5173
+          THROTTLE_TTL: 60
+          THROTTLE_LIMIT: 100
+          NODE_ENV: test
+        run: npm run start:prod &
+
+      - name: Install frontend dependencies
+        working-directory: app/frontend
+        run: npm ci
+
+      - name: Install Playwright
+        working-directory: app/frontend
+        run: npx playwright install --with-deps
+
+      - name: Run E2E tests
+        working-directory: app/frontend
+        env:
+          VITE_API_URL: http://localhost:3001/api
+        run: npm run e2e
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: app/frontend/playwright-report/
+          retention-days: 7
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Build backend
+        working-directory: app/backend
+        run: |
+          npm ci
+          npm run prisma:generate
+          npm run build
+
+      - name: Build frontend
+        working-directory: app/frontend
+        run: |
+          npm ci
+          npm run build
+
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: caseflow-backend-dev
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app/backend
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Deploy backend to ECS
+        run: |
+          aws ecs update-service \
+            --cluster caseflow-cluster-dev \
+            --service caseflow-backend-service \
+            --force-new-deployment \
+            --region us-east-1
+
+      - name: Wait for backend deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster caseflow-cluster-dev \
+            --services caseflow-backend-service \
+            --region us-east-1
+
+      - name: Build and push frontend image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: caseflow-frontend-dev
+          IMAGE_TAG: ${{ github.sha }}
+          VITE_API_URL: http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=$VITE_API_URL \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            ./app/frontend
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Deploy frontend to ECS
+        run: |
+          aws ecs update-service \
+            --cluster caseflow-cluster-dev \
+            --service caseflow-frontend-service \
+            --force-new-deployment \
+            --region us-east-1
+
+      - name: Wait for frontend deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster caseflow-cluster-dev \
+            --services caseflow-frontend-service \
+            --region us-east-1
+
+      - name: Deployment complete
+        run: |
+          echo "✅ Deployment successful!"
+          echo "🌐 Frontend: http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com"
+          echo "🔧 Backend: http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000"

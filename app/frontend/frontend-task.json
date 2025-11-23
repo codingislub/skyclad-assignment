@@ -1,0 +1,30 @@
+{
+  "family": "caseflow-frontend-dev",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::395305481916:role/caseflow-execution-role-dev",
+  "containerDefinitions": [
+    {
+      "name": "frontend",
+      "image": "395305481916.dkr.ecr.us-east-1.amazonaws.com/caseflow-frontend-dev:latest",
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/caseflow-frontend-dev",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}
