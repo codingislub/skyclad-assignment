@@ -191,23 +191,6 @@ jobs:
         working-directory: app/frontend
         run: npx playwright install --with-deps
 
-      - name: Start frontend
-        working-directory: app/frontend
-        env:
-          VITE_API_URL: http://localhost:3001/api
-        run: |
-          npm run dev > frontend.log 2>&1 &
-          echo "Waiting for frontend to be ready..."
-          for i in {1..30}; do
-            if curl -f http://localhost:5173 > /dev/null 2>&1; then
-              echo "Frontend is ready!"
-              break
-            fi
-            echo "Attempt $i: Frontend not ready yet..."
-            sleep 2
-          done
-          curl http://localhost:5173 || (cat frontend.log && exit 1)
-
       - name: Run E2E tests
         working-directory: app/frontend
         env:
