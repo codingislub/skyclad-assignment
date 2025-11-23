@@ -61,9 +61,12 @@ export class ValidationService {
     return name
       .trim()
       .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-      .split(' ')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .split(/([\s-])/)  // Split on spaces and hyphens but keep delimiters
+      .map((part) => {
+        if (part === ' ' || part === '-' || !part) return part;
+        return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+      })
+      .join('');
   }
 
   normalizeEmail(email: string): string | undefined {

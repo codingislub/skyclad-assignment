@@ -34,6 +34,8 @@ describe('AuthService', () => {
     }),
   };
 
+  const mockPrismaService = {};
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,6 +43,7 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: mockUsersService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: 'PrismaService', useValue: mockPrismaService },
       ],
     }).compile();
 

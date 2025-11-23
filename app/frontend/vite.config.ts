@@ -18,5 +18,10 @@ export default defineConfig({
       },
     },
   },
-  // test configuration has been moved to vitest.config.ts
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    exclude: ['**/node_modules/**', '**/e2e/**', '**/dist/**'],
+  },
 });
