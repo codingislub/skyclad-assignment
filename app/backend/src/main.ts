@@ -11,7 +11,12 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: [
+      'http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com',
+      'http://3.213.57.26',
+      'http://3.215.65.96',
+      'http://localhost:5173'
+    ],
     credentials: true,
   });
 
