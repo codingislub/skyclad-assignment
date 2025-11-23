@@ -171,8 +171,17 @@ jobs:
           THROTTLE_LIMIT: 100
           NODE_ENV: test
         run: |
-          npm run start:prod &
-          sleep 10
+          npm run start:prod > backend.log 2>&1 &
+          echo "Waiting for backend to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Attempt $i: Backend not ready yet..."
+            sleep 2
+          done
+          curl http://localhost:3001/api/health || (cat backend.log && exit 1)
 
       - name: Install frontend dependencies
         working-directory: app/frontend
@@ -181,6 +190,23 @@ jobs:
       - name: Install Playwright
         working-directory: app/frontend
         run: npx playwright install --with-deps
+
+      - name: Start frontend
+        working-directory: app/frontend
+        env:
+          VITE_API_URL: http://localhost:3001/api
+        run: |
+          npm run dev > frontend.log 2>&1 &
+          echo "Waiting for frontend to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:5173 > /dev/null 2>&1; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Attempt $i: Frontend not ready yet..."
+            sleep 2
+          done
+          curl http://localhost:5173 || (cat frontend.log && exit 1)
 
       - name: Run E2E tests
         working-directory: app/frontend
@@ -263,10 +289,10 @@ jobs:
 
       - name: Wait for backend deployment
         run: |
-          timeout 300 aws ecs wait services-stable \
+          timeout 900 aws ecs wait services-stable \
             --cluster caseflow-cluster-dev \
             --services caseflow-backend-service \
-            --region us-east-1 || echo "Backend deployment continuing in background..."
+            --region us-east-1 || echo "Backend deployment timed out but may still succeed"
 
       - name: Build and push frontend image
         env:
@@ -293,10 +319,10 @@ jobs:
 
       - name: Wait for frontend deployment
         run: |
-          timeout 300 aws ecs wait services-stable \
+          timeout 900 aws ecs wait services-stable \
             --cluster caseflow-cluster-dev \
             --services caseflow-frontend-service \
-            --region us-east-1 || echo "Frontend deployment continuing in background..."
+            --region us-east-1 || echo "Frontend deployment timed out but may still succeed"
 
       - name: Deployment complete
         run: |
