@@ -1,6 +1,0 @@
-case_id,applicant_name,dob,email,phone,category,priority
-C-2001,Sarah Johnson,1988-07-15,sarah.johnson@example.com,+14155551234,TAX,HIGH
-C-2002,Michael Chen,1992-03-22,michael.chen@example.com,+16175559876,LICENSE,MEDIUM
-C-2003,Emma Williams,1985-11-08,emma.williams@example.com,+13105554567,PERMIT,LOW
-C-2004,David Brown,1990-09-30,david.brown@example.com,+12125558901,TAX,MEDIUM
-C-2005,Lisa Anderson,1987-04-18,lisa.anderson@example.com,+14085552345,LICENSE,HIGH

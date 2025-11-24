@@ -1,14 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-// Debug: log base URL once at module load (non-production)
-if (typeof window !== 'undefined') {
-  // Avoid spamming logs if reloaded by HMR
-  if (!(window as any).__axiosBaseLogged) {
-    console.log('[Axios Init] Base URL:', API_URL);
-    (window as any).__axiosBaseLogged = true;
-  }
-}
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -20,10 +12,6 @@ export const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Debug outbound request
-    if (typeof window !== 'undefined') {
-      console.log('[Axios Request]', config.method?.toUpperCase(), config.url, 'Auth:', !!localStorage.getItem('accessToken'));
-    }
     const token = localStorage.getItem('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -37,9 +25,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    if (typeof window !== 'undefined') {
-      console.warn('[Axios Error]', error.config?.url, 'Status:', error.response?.status, 'Data:', error.response?.data);
-    }
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // If error is 401 and we haven't retried yet
