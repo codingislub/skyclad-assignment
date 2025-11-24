@@ -193,9 +193,12 @@ jobs:
 
       - name: Run E2E tests
         working-directory: app/frontend
-        env:
-          VITE_API_URL: http://localhost:3001/api
         run: npm run e2e
+
+      - name: Show backend logs on failure
+        if: failure()
+        working-directory: app/backend
+        run: cat backend.log || echo "No backend log found"
 
       - name: Upload Playwright Report
         if: always()
