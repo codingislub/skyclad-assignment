@@ -139,6 +139,20 @@ jobs:
         working-directory: app/frontend
         run: echo "VITE_API_URL=http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api" > .env
 
+      - name: Verify .env file
+        working-directory: app/frontend
+        run: |
+          echo "Contents of .env file:"
+          cat .env
+          echo "Current directory:"
+          pwd
+          ls -la .env
+
+      - name: Test backend connectivity
+        run: |
+          echo "Testing backend health endpoint..."
+          curl -f http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api/health || echo "Backend not reachable"
+
       - name: Run E2E tests
         working-directory: app/frontend
         run: npm run e2e
