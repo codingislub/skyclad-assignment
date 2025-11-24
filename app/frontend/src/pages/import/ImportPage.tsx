@@ -268,7 +268,7 @@ export default function ImportPage() {
                           <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-red-600">
                             <ul className="list-disc list-inside space-y-1">
                               {error.errors.map((err: any, i: number) => (
-                                <li key={i} className="break-words">
+                                <li key={i} className="break-words" data-testid="validation-error">
                                   <span className="font-semibold">{err.field}:</span> {err.message}
                                   {err.value && <span className="text-gray-500 block sm:inline"> (value: {err.value})</span>}
                                 </li>

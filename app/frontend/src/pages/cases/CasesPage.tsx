@@ -103,11 +103,13 @@ export default function CasesPage() {
             type="text"
             value={searchInput}
             placeholder="Search by name or case ID..."
+            name="search"
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             onChange={(e) => setSearchInput(e.target.value)}
           />
           <select
             value={params.status || ''}
+            name="status"
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             onChange={(e) => {
               const newParams = { ...params, page: 1 };
@@ -127,6 +129,7 @@ export default function CasesPage() {
           </select>
           <select
             value={params.category || ''}
+            name="category"
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             onChange={(e) => {
               const newParams = { ...params, page: 1 };
@@ -145,6 +148,7 @@ export default function CasesPage() {
           </select>
           <select
             value={params.priority || ''}
+            name="priority"
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             onChange={(e) => {
               const newParams = { ...params, page: 1 };
@@ -243,7 +247,7 @@ export default function CasesPage() {
       </div>
 
       {/* Cases Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" data-testid="cases-table">
         <div className="overflow-x-auto">
           <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -273,7 +277,7 @@ export default function CasesPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {data?.data.map((caseItem: Case) => (
-                <tr key={caseItem.id} className="hover:bg-gray-50">
+                <tr key={caseItem.id} className="hover:bg-gray-50" data-testid="case-row">
                   <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <Link
                       to={`/cases/${caseItem.id}`}

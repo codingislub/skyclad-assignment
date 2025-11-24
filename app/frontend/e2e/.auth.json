@@ -1,0 +1,26 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWlicnJkcjQwMDAxMXVpdGxneDA0MTFzIiwiZW1haWwiOiJvcGVyYXRvckBjYXNlZmxvdy5jb20iLCJyb2xlIjoiT1BFUkFUT1IiLCJpYXQiOjE3NjQwMTg0NTgsImV4cCI6MTc2NDAxOTM1OH0.n4xl-PIu76UIrJTLOiLvtPGn2Ho-x_jxdnLhcgvs_CU"
+        },
+        {
+          "name": "refreshToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWlicnJkcjQwMDAxMXVpdGxneDA0MTFzIiwiZW1haWwiOiJvcGVyYXRvckBjYXNlZmxvdy5jb20iLCJyb2xlIjoiT1BFUkFUT1IiLCJpYXQiOjE3NjQwMTg0NTgsImV4cCI6MTc2NDYyMzI1OH0.ZMjlVmn_QNNLU7S5i96vAWl3AMAAn6tYeP6dP9fuzvE"
+        },
+        {
+          "name": "theme-storage",
+          "value": "{\"state\":{\"theme\":\"system\",\"effectiveTheme\":\"light\"},\"version\":0}"
+        },
+        {
+          "name": "auth-storage",
+          "value": "{\"state\":{\"user\":{\"id\":\"cmibrrdr400011uitlgx0411s\",\"email\":\"operator@caseflow.com\",\"role\":\"OPERATOR\",\"firstName\":\"Operator\",\"lastName\":\"User\"},\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWlicnJkcjQwMDAxMXVpdGxneDA0MTFzIiwiZW1haWwiOiJvcGVyYXRvckBjYXNlZmxvdy5jb20iLCJyb2xlIjoiT1BFUkFUT1IiLCJpYXQiOjE3NjQwMTg0NTgsImV4cCI6MTc2NDAxOTM1OH0.n4xl-PIu76UIrJTLOiLvtPGn2Ho-x_jxdnLhcgvs_CU\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWlicnJkcjQwMDAxMXVpdGxneDA0MTFzIiwiZW1haWwiOiJvcGVyYXRvckBjYXNlZmxvdy5jb20iLCJyb2xlIjoiT1BFUkFUT1IiLCJpYXQiOjE3NjQwMTg0NTgsImV4cCI6MTc2NDYyMzI1OH0.ZMjlVmn_QNNLU7S5i96vAWl3AMAAn6tYeP6dP9fuzvE\",\"isAuthenticated\":true},\"version\":0}"
+        }
+      ]
+    }
+  ]
+}

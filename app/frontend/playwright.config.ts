@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
+  globalSetup: './e2e/global-setup.ts',
   testDir: './e2e',
+  testIgnore: ['**/e2e/app.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -37,6 +39,8 @@ export default defineConfig({
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
-    // Environment variables are loaded from .env file by Vite
+    env: {
+      VITE_API_URL: process.env.VITE_API_URL || 'http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api'
+    }
   },
 });

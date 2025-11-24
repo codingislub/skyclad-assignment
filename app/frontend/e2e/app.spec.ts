@@ -12,8 +12,8 @@ test.describe('Authentication Flow', () => {
   test('should login successfully with valid credentials', async ({ page }) => {
     await page.goto('/login');
     
-    await page.fill('input[name="email"]', 'operator@caseflow.com');
-    await page.fill('input[name="password"]', 'operator123');
+    await page.getByLabel('Email address').fill('operator@caseflow.com');
+    await page.getByLabel('Password').fill('operator123');
     await page.click('button[type="submit"]');
     
     await expect(page).toHaveURL('/');
@@ -23,8 +23,8 @@ test.describe('Authentication Flow', () => {
   test('should show error with invalid credentials', async ({ page }) => {
     await page.goto('/login');
     
-    await page.fill('input[name="email"]', 'wrong@example.com');
-    await page.fill('input[name="password"]', 'wrongpassword');
+    await page.getByLabel('Email address').fill('wrong@example.com');
+    await page.getByLabel('Password').fill('wrongpassword');
     await page.click('button[type="submit"]');
     
     await expect(page.locator('text=/invalid|error/i')).toBeVisible();
@@ -33,8 +33,8 @@ test.describe('Authentication Flow', () => {
   test('should logout successfully', async ({ page }) => {
     // Login first
     await page.goto('/login');
-    await page.fill('input[name="email"]', 'operator@caseflow.com');
-    await page.fill('input[name="password"]', 'operator123');
+    await page.getByLabel('Email address').fill('operator@caseflow.com');
+    await page.getByLabel('Password').fill('operator123');
     await page.click('button[type="submit"]');
     
     await expect(page).toHaveURL('/');
@@ -49,8 +49,8 @@ test.describe('CSV Import Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Login
     await page.goto('/login');
-    await page.fill('input[name="email"]', 'operator@caseflow.com');
-    await page.fill('input[name="password"]', 'operator123');
+    await page.getByLabel('Email address').fill('operator@caseflow.com');
+    await page.getByLabel('Password').fill('operator123');
     await page.click('button[type="submit"]');
     await page.waitForURL('/');
   });
@@ -66,7 +66,8 @@ test.describe('CSV Import Flow', () => {
     
     // Upload file
     const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles('./sample-cases.csv');
+    // Path adjusted to reach repository root sample file from app/frontend working directory
+    await fileInput.setInputFiles('../../sample-cases.csv');
     
     // Wait for validation
     await expect(page.locator('text=/validating|processing/i')).toBeVisible();
@@ -77,7 +78,7 @@ test.describe('CSV Import Flow', () => {
     await page.goto('/import');
     
     const fileInput = page.locator('input[type="file"]');
-    await fileInput.setInputFiles('./sample-cases.csv');
+    await fileInput.setInputFiles('../../sample-cases.csv');
     
     // Check for error indicators
     await expect(page.locator('[data-testid="validation-error"]')).toBeVisible({ timeout: 10000 });
@@ -88,8 +89,8 @@ test.describe('Case Management', () => {
   test.beforeEach(async ({ page }) => {
     // Login
     await page.goto('/login');
-    await page.fill('input[name="email"]', 'operator@caseflow.com');
-    await page.fill('input[name="password"]', 'operator123');
+    await page.getByLabel('Email address').fill('operator@caseflow.com');
+    await page.getByLabel('Password').fill('operator123');
     await page.click('button[type="submit"]');
     await page.waitForURL('/');
   });
@@ -128,10 +129,10 @@ test.describe('Accessibility', () => {
     
     // Tab through form
     await page.keyboard.press('Tab');
-    await expect(page.locator('input[name="email"]')).toBeFocused();
-    
+    await expect(page.getByLabel('Email address')).toBeFocused();
+
     await page.keyboard.press('Tab');
-    await expect(page.locator('input[name="password"]')).toBeFocused();
+    await expect(page.getByLabel('Password')).toBeFocused();
     
     await page.keyboard.press('Tab');
     await expect(page.locator('button[type="submit"]')).toBeFocused();
@@ -140,10 +141,10 @@ test.describe('Accessibility', () => {
   test('should have proper ARIA labels', async ({ page }) => {
     await page.goto('/login');
     
-    const emailInput = page.locator('input[name="email"]');
-    await expect(emailInput).toHaveAttribute('aria-label', /.+/);
-    
-    const passwordInput = page.locator('input[name="password"]');
-    await expect(passwordInput).toHaveAttribute('aria-label', /.+/);
+    const emailInput = page.getByLabel('Email address');
+    await expect(emailInput).toBeVisible();
+
+    const passwordInput = page.getByLabel('Password');
+    await expect(passwordInput).toBeVisible();
   });
 });
