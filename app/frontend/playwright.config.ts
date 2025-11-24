@@ -33,11 +33,12 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: process.env.CI 
-      ? 'VITE_API_URL=http://localhost:3001/api npm run dev'
-      : 'npm run dev',
+    command: 'npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    env: {
+      VITE_API_URL: process.env.VITE_API_URL || 'http://localhost:3001/api',
+    },
   },
 });

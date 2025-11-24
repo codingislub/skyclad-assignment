@@ -191,6 +191,10 @@ jobs:
         working-directory: app/frontend
         run: npx playwright install --with-deps
 
+      - name: Setup frontend environment
+        working-directory: app/frontend
+        run: echo "VITE_API_URL=http://localhost:3001/api" > .env
+
       - name: Run E2E tests
         working-directory: app/frontend
         env:
