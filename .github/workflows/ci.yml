@@ -135,29 +135,14 @@ jobs:
         working-directory: app/frontend
         run: npx playwright install --with-deps
 
-      - name: Create .env for E2E tests
-        working-directory: app/frontend
-        run: echo "VITE_API_URL=http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api" > .env
-
-      - name: Verify .env file
-        working-directory: app/frontend
-        run: |
-          echo "Contents of .env file:"
-          cat .env
-          echo "Current directory:"
-          pwd
-          ls -la .env
-          echo "Testing if Vite can read the env var:"
-          node -e "console.log('VITE_API_URL would be:', process.env.VITE_API_URL || 'not set')"
-
-      - name: Test backend connectivity
-        run: |
-          echo "Testing backend health endpoint..."
-          curl -f http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api/health || echo "Backend not reachable"
+      - name: Backend health check
+        run: curl -f http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api/health || (echo "Backend not reachable" && exit 1)
 
       - name: Run E2E tests
         working-directory: app/frontend
-        run: npm run e2e
+        env:
+          VITE_API_URL: http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api
+        run: npx playwright test --project=chromium --reporter=line
 
       - name: Show backend logs on failure
         if: failure()
