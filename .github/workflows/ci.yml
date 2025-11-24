@@ -147,6 +147,8 @@ jobs:
           echo "Current directory:"
           pwd
           ls -la .env
+          echo "Testing if Vite can read the env var:"
+          node -e "console.log('VITE_API_URL would be:', process.env.VITE_API_URL || 'not set')"
 
       - name: Test backend connectivity
         run: |

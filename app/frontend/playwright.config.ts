@@ -37,8 +37,6 @@ export default defineConfig({
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
-    env: {
-      VITE_API_URL: 'http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api',
-    },
+    // Environment variables are loaded from .env file by Vite
   },
 });
