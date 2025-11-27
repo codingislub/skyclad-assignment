@@ -235,9 +235,15 @@ jobs:
           ECR_REPOSITORY: caseflow-frontend-dev
           IMAGE_TAG: ${{ github.sha }}
           VITE_API_URL: http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com:3000/api
+          VITE_ONESCHEMA_ENABLED: ${{ secrets.VITE_ONESCHEMA_ENABLED }}
+          VITE_ONESCHEMA_CLIENT_ID: ${{ secrets.VITE_ONESCHEMA_CLIENT_ID }}
+          VITE_ONESCHEMA_TEMPLATE_KEY: ${{ secrets.VITE_ONESCHEMA_TEMPLATE_KEY }}
         run: |
           docker build \
             --build-arg VITE_API_URL=$VITE_API_URL \
+            --build-arg VITE_ONESCHEMA_ENABLED=$VITE_ONESCHEMA_ENABLED \
+            --build-arg VITE_ONESCHEMA_CLIENT_ID=$VITE_ONESCHEMA_CLIENT_ID \
+            --build-arg VITE_ONESCHEMA_TEMPLATE_KEY=$VITE_ONESCHEMA_TEMPLATE_KEY \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             ./app/frontend
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
