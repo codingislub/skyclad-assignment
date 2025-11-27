@@ -43,4 +43,11 @@ export const importsService = {
     const response = await api.get<ImportData>(`/imports/${id}`);
     return response.data;
   },
+
+  async getOneSchemaSession(templateKey: string): Promise<{ userJwt?: string; clientId?: string; templateKey?: string; error?: string }> {
+    const response = await api.post('/imports/oneschema/session', {
+      templateKey,
+    });
+    return response.data;
+  },
 };

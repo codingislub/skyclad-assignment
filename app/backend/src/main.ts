@@ -15,7 +15,8 @@ async function bootstrap() {
       'http://caseflow-alb-dev-644355283.us-east-1.elb.amazonaws.com',
       'http://3.213.57.26',
       'http://3.215.65.96',
-      'http://localhost:5173'
+      'http://localhost:5173',
+      'http://localhost:5174'
     ],
     credentials: true,
   });

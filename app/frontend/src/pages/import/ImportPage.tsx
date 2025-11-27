@@ -3,6 +3,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'react-toastify';
 import { useImportStore } from '@/store/import.store';
 import { importsService } from '@/services/imports.service';
+import OneSchemaImport from '@/components/import/OneSchemaImport';
+import oneSchemaConfig from '@/config/oneschema.config';
 
 interface ValidationResult {
   filename: string;
@@ -96,8 +98,24 @@ export default function ImportPage() {
         <p className="text-sm sm:text-base text-gray-600 mt-1">Upload a CSV file to import cases into the system</p>
       </div>
 
-      {/* Upload Area */}
+      {/* OneSchema Import Option */}
+      {oneSchemaConfig.enabled && (
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Option 1: Professional Import (Recommended)</h2>
+          <OneSchemaImport 
+            onSuccess={() => {
+              setValidationResult(null);
+              setFilename('');
+            }}
+          />
+        </div>
+      )}
+
+      {/* Standard Upload Area */}
       <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          {oneSchemaConfig.enabled ? 'Option 2: Standard Import' : 'Upload CSV File'}
+        </h2>
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 lg:p-12 text-center hover:border-blue-500 transition-colors">
           <div className="space-y-3 sm:space-y-4">
             <div className="text-4xl sm:text-5xl lg:text-6xl">📁</div>

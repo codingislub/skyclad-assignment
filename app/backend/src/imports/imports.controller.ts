@@ -13,6 +13,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImportsService } from './imports.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../auth/decorators/public.decorator';
 import { CreateCaseDto } from '../cases/dto/create-case.dto';
 import { UserRole } from '@prisma/client';
 
@@ -68,6 +69,13 @@ export class ImportsController {
       importId: importRecord.id,
       ...results,
     };
+  }
+
+  @Public()
+  @Post('oneschema/session')
+  async createOneSchemaSession(@Body() body: { templateKey?: string; userEmail?: string }) {
+    const templateKey = body?.templateKey || 'cases';
+    return this.importsService.createOneSchemaSession(templateKey, body?.userEmail);
   }
 
   @Get()

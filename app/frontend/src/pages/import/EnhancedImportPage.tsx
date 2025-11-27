@@ -3,6 +3,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'react-toastify';
 import { useImportStore } from '@/store/import.store';
 import { importsService } from '@/services/imports.service';
+import OneSchemaImport from '@/components/import/OneSchemaImport';
+import oneSchemaConfig from '@/config/oneschema.config';
 import {
   DndContext,
   closestCenter,
@@ -160,16 +162,53 @@ export default function EnhancedImportPage() {
   };
 
   const handleFixAll = () => {
-    const fixed = editedData.map((row) => ({
+    if (!validationResult) return;
+
+    // Fix existing valid data
+    const fixedValidData = editedData.map((row) => ({
       ...row,
       applicantName: row.applicantName?.trim().split(' ').map((w: string) => 
         w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-      ).join(' '),
-      email: row.email?.trim().toLowerCase(),
-      phone: row.phone?.replace(/[^\d+]/g, ''),
+      ).join(' ') || '',
+      email: row.email?.trim().toLowerCase() || '',
+      phone: row.phone?.replace(/[^\d+]/g, '') || '',
     }));
-    setEditedData(fixed);
-    toast.success('Applied all auto-fixes!');
+
+    // Attempt to fix invalid rows
+    const fixedInvalidData = validationResult.errors.map((errorRow) => {
+      const row = errorRow.data || errorRow.row || {};
+      
+      return {
+        caseId: row.caseId?.toString().trim() || `C-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        applicantName: row.applicantName?.toString().trim().split(' ').map((w: string) => 
+          w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+        ).join(' ') || 'Unknown',
+        dob: row.dob || new Date().toISOString().split('T')[0],
+        email: row.email?.toString().trim().toLowerCase() || `placeholder-${Date.now()}@example.com`,
+        phone: row.phone?.toString().replace(/[^\d+]/g, '') || '+1000000000',
+        category: ['TAX', 'LICENSE', 'PERMIT'].includes(row.category?.toUpperCase()) 
+          ? row.category.toUpperCase() 
+          : 'TAX',
+        priority: ['LOW', 'MEDIUM', 'HIGH'].includes(row.priority?.toUpperCase()) 
+          ? row.priority.toUpperCase() 
+          : 'MEDIUM',
+      };
+    });
+
+    // Combine fixed data
+    const allFixedData = [...fixedValidData, ...fixedInvalidData];
+    setEditedData(allFixedData);
+    
+    // Update validation result
+    setValidationResult({
+      ...validationResult,
+      validRows: allFixedData.length,
+      invalidRows: 0,
+      validData: allFixedData,
+      errors: [],
+    });
+
+    toast.success(`Fixed ${fixedInvalidData.length} invalid rows and ${fixedValidData.length} valid rows!`);
   };
 
   const handleDragEnd = (event: any) => {
@@ -191,45 +230,47 @@ export default function EnhancedImportPage() {
     setProgress(0);
 
     try {
-      const batchSize = 100;
+      const batchSize = 1000; // Increased from 100 to 1000
       const totalBatches = Math.ceil(editedData.length / batchSize);
       let successCount = 0;
       let failedCount = 0;
       const failedRows: any[] = [];
 
-      for (let i = 0; i < editedData.length; i += batchSize) {
-        const batch = editedData.slice(i, i + batchSize);
+      // Process batches in parallel (3 at a time)
+      const concurrentBatches = 3;
+      
+      for (let i = 0; i < editedData.length; i += batchSize * concurrentBatches) {
+        const batchPromises = [];
         
-        try {
-          const result = await importsService.submitImport({
-            filename: validationResult.filename,
-            cases: batch,
-          });
-
+        for (let j = 0; j < concurrentBatches; j++) {
+          const startIdx = i + (j * batchSize);
+          if (startIdx >= editedData.length) break;
+          
+          const batch = editedData.slice(startIdx, startIdx + batchSize);
+          
+          batchPromises.push(
+            importsService.submitImport({
+              filename: validationResult.filename,
+              cases: batch,
+            }).catch(error => {
+              console.error(`Batch failed:`, error);
+              return { successful: [], failed: batch.map(row => ({ row, error: 'Submit failed' })) };
+            })
+          );
+        }
+        
+        const results = await Promise.all(batchPromises);
+        
+        results.forEach(result => {
           successCount += result.successful?.length || 0;
           failedCount += result.failed?.length || 0;
-          
           if (result.failed?.length > 0) {
             failedRows.push(...result.failed);
           }
+        });
 
-          const currentBatch = Math.floor(i / batchSize) + 1;
-          setProgress(Math.round((currentBatch / totalBatches) * 100));
-        } catch (error) {
-          console.error(`Batch ${i / batchSize + 1} failed:`, error);
-          // Retry logic
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          try {
-            const retryResult = await importsService.submitImport({
-              filename: validationResult.filename,
-              cases: batch,
-            });
-            successCount += retryResult.successful?.length || 0;
-          } catch (retryError) {
-            failedCount += batch.length;
-            failedRows.push(...batch.map(row => ({ row, error: 'Submit failed after retry' })));
-          }
-        }
+        const processedBatches = Math.min(Math.floor(i / batchSize) + concurrentBatches, totalBatches);
+        setProgress(Math.round((processedBatches / totalBatches) * 100));
       }
 
       toast.success(`Successfully imported ${successCount} cases!`);
@@ -302,9 +343,25 @@ export default function EnhancedImportPage() {
         )}
       </div>
 
+      {/* OneSchema Import Option */}
+      {!validationResult && oneSchemaConfig.enabled && (
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Option 1: Professional Import (Recommended)</h2>
+          <OneSchemaImport 
+            onSuccess={() => {
+              setValidationResult(null);
+              setEditedData([]);
+            }}
+          />
+        </div>
+      )}
+
       {/* Upload Area */}
       {!validationResult && (
         <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {oneSchemaConfig.enabled ? 'Option 2: Standard Import' : 'Upload CSV File'}
+          </h2>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 lg:p-12 text-center hover:border-blue-500 transition-colors">
             <div className="space-y-3 sm:space-y-4">
               <div className="text-4xl sm:text-5xl lg:text-6xl">📁</div>

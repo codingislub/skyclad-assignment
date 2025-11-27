@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { parse } from 'csv-parse/sync';
 import { PrismaService } from '../prisma/prisma.service';
 import { CasesService } from '../cases/cases.service';
@@ -8,10 +9,12 @@ import { ImportStatus } from '@prisma/client';
 
 @Injectable()
 export class ImportsService {
+  private readonly logger = new Logger(ImportsService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly casesService: CasesService,
     private readonly validationService: ValidationService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async parseCSV(file: Express.Multer.File) {
@@ -71,7 +74,7 @@ export class ImportsService {
     cases: CreateCaseDto[],
     userId: string,
     importId: string,
-    batchSize: number = 100,
+    batchSize: number = 500,
   ) {
     const results: {
       successful: any[];
@@ -165,5 +168,56 @@ export class ImportsService {
     });
 
     return importRecord;
+  }
+
+  async createOneSchemaSession(templateKey: string, userEmail?: string) {
+    const clientSecret = process.env.ONESCHEMA_CLIENT_SECRET;
+    const clientId = process.env.ONESCHEMA_CLIENT_ID;
+    
+    if (!clientSecret) {
+      this.logger.error('OneSchema: Missing ONESCHEMA_CLIENT_SECRET');
+      return {
+        error: 'OneSchema not configured. Missing ONESCHEMA_CLIENT_SECRET in backend environment.',
+      };
+    }
+
+    if (!clientId) {
+      this.logger.error('OneSchema: Missing ONESCHEMA_CLIENT_ID');
+      return {
+        error: 'OneSchema not configured. Missing ONESCHEMA_CLIENT_ID in backend environment.',
+      };
+    }
+
+    try {
+      // Generate JWT token for OneSchema (userJwt)
+      const userId = userEmail || 'anonymous-user';
+      const userJwt = this.jwtService.sign(
+        { 
+          user_id: userId,
+          iss: clientId  // issuer must be the client ID
+        },
+        { 
+          secret: clientSecret,
+          expiresIn: '1h',
+          algorithm: 'HS256'
+        }
+      );
+
+      this.logger.log(`Generated OneSchema userJwt for user: ${userId}, template: ${templateKey}`);
+      
+      // Return the userJwt directly - no need to call OneSchema API
+      // The React component will use this JWT with the OneSchema SDK
+      return { 
+        userJwt,
+        clientId,
+        templateKey
+      };
+    } catch (err: any) {
+      this.logger.error('Error generating OneSchema userJwt', err?.message || err);
+      return { 
+        error: 'Failed to generate OneSchema session token.',
+        details: err?.message,
+      };
+    }
   }
 }

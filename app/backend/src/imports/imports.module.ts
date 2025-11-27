@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
+import { JwtModule } from '@nestjs/jwt';
 import { ImportsService } from './imports.service';
 import { ImportsController } from './imports.controller';
 import { CasesModule } from '../cases/cases.module';
@@ -9,6 +10,7 @@ import { memoryStorage } from 'multer';
 @Module({
   imports: [
     CasesModule,
+    JwtModule.register({}),
     MulterModule.register({
       storage: memoryStorage(),
       limits: {
